@@ -16,7 +16,7 @@ plugins:
 ## Configuration
 Configuration happens 'globally' via custom.apigatewayLogRetention
 
-PLEASE NOTE THE PLUGIN REQUIRES THE FOLLOWING AWS PERMISSIONS:
+PLEASE NOTE THAT THE PLUGIN REQUIRES THE FOLLOWING AWS PERMISSIONS:
 
 **CloudWatch Logs**
 * putRetentionPolicy
@@ -28,11 +28,11 @@ PLEASE NOTE THE PLUGIN REQUIRES THE FOLLOWING AWS PERMISSIONS:
 
 **Plugin Options**
 
-`accessLogging.enabled` (optional) - whether or not to update access logging retention policy.
+`accessLogging.enabled` (optional) - Whether or not to update access logging retention policy. Set to false by default.
 
 `accessLogging.days` (required) - Possible values are: 1, 3, 5, 7, 14, 30, 60, 90, 120, 150, 180, 365, 400, 545, 731, 1827, 3653 and 'never expire'.
 
-`executionLogging.enabled` (optional) - whether or not to update execution logging retention policy.
+`executionLogging.enabled` (optional) - Whether or not to update execution logging retention policy. Set to false by default.
 
 `executionLogging.days` (required) - Possible values are: 1, 3, 5, 7, 14, 30, 60, 90, 120, 150, 180, 365, 400, 545, 731, 1827, 3653 and 'never expire'.
 
