@@ -5,7 +5,7 @@
     "author": "Deepak Thankachan, DVLA",
     "license": "MIT",
     "homepage": "https://github.com/dvla/serverless-apigateway-log-retention",
-    "main": "src/apigatewayLogRetentionPlugin.js",
+    "main": "src/serverlessApigatewayLogRetentionPlugin.js",
     "repository": {
         "type": "git",
         "url": "https://github.com/dvla/serverless-apigateway-log-retention.git"
