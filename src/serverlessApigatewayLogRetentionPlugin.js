@@ -29,7 +29,9 @@ class ApigatewayLogRetentionPlugin {
                 limit: 500, // max limit
             })
             .promise();
-        const apiName = `${this.options.stage}-${this.serverless.service.getServiceName()}`;
+        const apiName = this.serverless.service.provider.apiGateway?.shouldStartNameWithService
+            ? `${this.serverless.service.getServiceName()}-${this.options.stage}`
+            : `${this.options.stage}-${this.serverless.service.getServiceName()}`;
         const match = apis.items.find((api) => api.name === apiName);
         if (!match) {
             throw new Error(`Api ${apiName} does not exist.`);

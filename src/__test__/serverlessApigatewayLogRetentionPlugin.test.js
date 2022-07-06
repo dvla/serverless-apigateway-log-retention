@@ -19,6 +19,7 @@ beforeEach(() => {
         service: {
             getServiceName: () => 'serverless-log-retention-demo',
             custom: {},
+            provider: {}
         },
     };
     options = {
@@ -38,6 +39,7 @@ afterEach(() => {
 
 describe('setLogRetention', () => {
     test('sets log retention policy on log group correctly when days is set to an integer', async () => {
+        expect.assertions(2);
         awsMock.mock('CloudWatchLogs', 'putRetentionPolicy', (params, callback) => {
             mockPutRetentionPolicyCallback(params);
             callback('', {});
@@ -56,6 +58,7 @@ describe('setLogRetention', () => {
     });
 
     test("deletes log retention policy on log group correctly when days is set to 'never expire'", async () => {
+        expect.assertions(3);
         awsMock.mock('CloudWatchLogs', 'deleteRetentionPolicy', (params, callback) => {
             mockDeleteRetentionPolicyCallback(params);
             callback('', {});
@@ -79,6 +82,7 @@ describe('setLogRetention', () => {
     });
 
     test('throws error if putRetentionPolicy call erred', async () => {
+        expect.assertions(2);
         const mockAwsError = new Error('some aws error');
 
         awsMock.mock('CloudWatchLogs', 'putRetentionPolicy', (params, callback) => {
@@ -95,6 +99,7 @@ describe('setLogRetention', () => {
     });
 
     test('throws error if deleteRetentionPolicy call erred', async () => {
+        expect.assertions(2);
         const mockAwsError = new Error('some aws error');
 
         awsMock.mock('CloudWatchLogs', 'deleteRetentionPolicy', (params, callback) => {
@@ -116,6 +121,7 @@ describe('setLogRetention', () => {
 
 describe('getRestApiId', () => {
     test('returns API ID if there exists an API name matching the stack name', async () => {
+        expect.assertions(3);
         awsMock.mock('APIGateway', 'getRestApis', (params, callback) => {
             mockGetRestApisCallback(params);
             callback('', {
@@ -144,7 +150,39 @@ describe('getRestApiId', () => {
         expect(returnedApiId).toEqual('1');
     });
 
+    test('support shouldStartNameWithService in serverless setting', async () => {
+        expect.assertions(3);
+        serverless.service.provider.apiGateway = { shouldStartNameWithService: true };
+        awsMock.mock('APIGateway', 'getRestApis', (params, callback) => {
+            mockGetRestApisCallback(params);
+            callback('', {
+                items: [
+                    {
+                        id: '1',
+                        name: 'serverless-log-retention-demo-dev',
+                    },
+                    {
+                        id: '2',
+                        name: 'serverless-log-retention-demo-test1',
+                    },
+                ],
+            });
+        });
+
+        const expectedGetRestApisCallback = {
+            limit: 500,
+        };
+
+        const apigatewayLogRetentionPlugin = new Plugin(serverless, options);
+        const returnedApiId = await apigatewayLogRetentionPlugin.getRestApiId();
+
+        expect(mockGetRestApisCallback).toHaveBeenCalledTimes(1);
+        expect(mockGetRestApisCallback).toHaveBeenCalledWith(expectedGetRestApisCallback);
+        expect(returnedApiId).toEqual('1');
+    });
+
     test('throws error if there is no API name matching the deployed stack name', async () => {
+        expect.assertions(2);
         awsMock.mock('APIGateway', 'getRestApis', (params, callback) => {
             mockGetRestApisCallback(params);
             callback('', {
@@ -169,6 +207,7 @@ describe('getRestApiId', () => {
     });
 
     test('throws error if getRestApis call erred', async () => {
+        expect.assertions(2);
         const mockAwsError = new Error('some aws error');
 
         awsMock.mock('APIGateway', 'getRestApis', (params, callback) => {
@@ -184,6 +223,7 @@ describe('getRestApiId', () => {
 
 describe('getAccessLogGroupName', () => {
     test('returns access log group name given rest API ID and stage', async () => {
+        expect.assertions(3);
         awsMock.mock('APIGateway', 'getStage', (params, callback) => {
             mockGetStageCallback(params);
             callback('', {
@@ -209,6 +249,7 @@ describe('getAccessLogGroupName', () => {
     });
 
     test('throws error if access log ARN not set', async () => {
+        expect.assertions(1);
         awsMock.mock('APIGateway', 'getStage', (params, callback) => {
             mockGetStageCallback(params);
             callback('', {
@@ -228,6 +269,7 @@ describe('getAccessLogGroupName', () => {
     });
 
     test('throws error if access logs not turned on', async () => {
+        expect.assertions(1);
         awsMock.mock('APIGateway', 'getStage', (params, callback) => {
             mockGetStageCallback(params);
             callback('', {
@@ -244,6 +286,7 @@ describe('getAccessLogGroupName', () => {
     });
 
     test('throws error if getStage call erred', async () => {
+        expect.assertions(1);
         const mockAwsError = new Error('some aws error');
 
         awsMock.mock('APIGateway', 'getStage', (params, callback) => {
@@ -259,6 +302,7 @@ describe('getAccessLogGroupName', () => {
 
 describe('setApigatewayLogRetention', () => {
     test('returns early if access logging and execution logging is disabled', async () => {
+        expect.assertions(1);
         serverless.service.custom = {
             apigatewayLogRetention: {
                 accessLogging: { enabled: false },
@@ -274,6 +318,7 @@ describe('setApigatewayLogRetention', () => {
     });
 
     test('returns early if plugin config is missing', async () => {
+        expect.assertions(1);
         const apigatewayLogRetentionPlugin = new Plugin(serverless, options);
         apigatewayLogRetentionPlugin.getRestApiId = jest.fn();
 
@@ -283,6 +328,7 @@ describe('setApigatewayLogRetention', () => {
     });
 
     test("errors correctly if rest api id couldn't be fetched", async () => {
+        expect.assertions(3);
         serverless.service.custom = {
             apigatewayLogRetention: {
                 accessLogging: { enabled: true, days: 7 },
@@ -304,6 +350,7 @@ describe('setApigatewayLogRetention', () => {
     });
 
     test("errors correctly if access log group name couldn't be fetched while trying to update access log group retention", async () => {
+        expect.assertions(4);
         serverless.service.custom = {
             apigatewayLogRetention: {
                 accessLogging: { enabled: true, days: 7 },
@@ -329,6 +376,7 @@ describe('setApigatewayLogRetention', () => {
     });
 
     test('errors correctly if an error occurred while trying to update access log group retention', async () => {
+        expect.assertions(5);
         serverless.service.custom = {
             apigatewayLogRetention: {
                 accessLogging: { enabled: true, days: 7 },
@@ -358,6 +406,7 @@ describe('setApigatewayLogRetention', () => {
     });
 
     test("errors correctly if execution log group retention couldn't be set", async () => {
+        expect.assertions(3);
         serverless.service.custom = {
             apigatewayLogRetention: {
                 accessLogging: { enabled: false },
@@ -382,6 +431,7 @@ describe('setApigatewayLogRetention', () => {
     });
 
     test('sets access and execution log retention correctly', async () => {
+        expect.assertions(8);
         serverless.service.custom = {
             apigatewayLogRetention: {
                 accessLogging: { enabled: true, days: 7 },
