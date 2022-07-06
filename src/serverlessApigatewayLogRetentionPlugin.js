@@ -58,6 +58,13 @@ class ApigatewayLogRetentionPlugin {
         );
     }
 
+    useAwsProfileIfprovided(awsSDK) {
+        const profile = this.serverless.service.provider?.profile;
+        if (profile) {
+            AWS.config.credentials = new awsSDK.SharedIniFileCredentials({ profile });
+        }
+    }
+
     async setApigatewayLogRetention() {
         const {
             service: {
@@ -72,6 +79,8 @@ class ApigatewayLogRetentionPlugin {
         if (!accessLogging.enabled && !executionLogging.enabled) {
             return;
         }
+
+        this.useAwsProfileIfprovided(AWS);
 
         let restApiId;
         try {

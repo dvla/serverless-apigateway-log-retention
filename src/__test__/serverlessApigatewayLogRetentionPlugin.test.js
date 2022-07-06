@@ -300,6 +300,41 @@ describe('getAccessLogGroupName', () => {
     });
 });
 
+describe('useAwsProfileIfProvided', () => {
+    test('uses AWS profile instead of default if provided', async () => {
+        expect.assertions(2);
+        const mockSharedIniFileCredentials = jest.fn();
+
+        const mockAwsSdk = {
+            SharedIniFileCredentials: mockSharedIniFileCredentials
+        }
+        serverless.service.provider.profile = 'test_profile';
+
+        const apigatewayLogRetentionPlugin = new Plugin(serverless, options);
+        await apigatewayLogRetentionPlugin.useAwsProfileIfprovided(mockAwsSdk);
+
+        expect(mockSharedIniFileCredentials).toHaveBeenCalledTimes(1);
+        expect(mockSharedIniFileCredentials).toHaveBeenCalledWith({
+            profile: 'test_profile'
+        });
+    });
+
+    test('uses default AWS profile if profile was not provided', async () => {
+        expect.assertions(1);
+        const mockSharedIniFileCredentials = jest.fn();
+
+        const mockAwsSdk = {
+            SharedIniFileCredentials: mockSharedIniFileCredentials
+        }
+
+        const apigatewayLogRetentionPlugin = new Plugin(serverless, options);
+        await apigatewayLogRetentionPlugin.useAwsProfileIfprovided(mockAwsSdk);
+
+        expect(mockSharedIniFileCredentials).toHaveBeenCalledTimes(0);
+    });
+});
+
+
 describe('setApigatewayLogRetention', () => {
     test('returns early if access logging and execution logging is disabled', async () => {
         expect.assertions(1);
