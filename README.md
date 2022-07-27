@@ -1,6 +1,6 @@
 # ApiGateway Log Retention
 
-Control the retention of your ApiGateway access logs and execution logs. 
+Control the retention of your ApiGateway access logs and execution logs.
 
 ## Installation
 From your target serverless project, run:
@@ -73,5 +73,3 @@ custom:
       enabled: true
       days: 7
 ```
-
-Note: This plugin might not be suitable if you have over 500 APIs in the region you are deploying to.
