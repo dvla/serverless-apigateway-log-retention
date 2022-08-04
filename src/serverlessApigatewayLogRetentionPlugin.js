@@ -24,15 +24,19 @@ class ApigatewayLogRetentionPlugin {
             apiVersion: apigatewayApiVersion,
             region: this.serverless.getProvider('aws').getRegion(),
         });
-        const apis = await apiGateway
-            .getRestApis({
-                limit: 500, // max limit
-            })
-            .promise();
+
+        const apis = [];
+        let marker;
+        do {
+            const { items, position } = await apiGateway.getRestApis({ position: marker, limit: 500 }).promise();
+            apis.push(...(items || []));
+            marker = position;
+        } while (marker);
+
         const apiName = this.serverless.service.provider.apiGateway?.shouldStartNameWithService
             ? `${this.serverless.service.getServiceName()}-${this.options.stage}`
             : `${this.options.stage}-${this.serverless.service.getServiceName()}`;
-        const match = apis.items.find((api) => api.name === apiName);
+        const match = apis.find((api) => api.name === apiName);
         if (!match) {
             throw new Error(`Api ${apiName} does not exist.`);
         }

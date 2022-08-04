@@ -150,6 +150,41 @@ describe('getRestApiId', () => {
         expect(returnedApiId).toEqual('1');
     });
 
+    test('finds matching API from over 500 RestApis', async () => {
+        expect.assertions(1);
+        awsMock.mock('APIGateway', 'getRestApis', (params, callback) => {
+            mockGetRestApisCallback(params);
+            if (mockGetRestApisCallback.mock.calls.length === 1) {
+                callback('', {
+                    items: Array(500).fill({
+                        id: '2',
+                        name: 'test1-serverless-log-retention-demo',
+                    }),
+                    position: 'next'
+                });
+            } else {
+                callback('', {
+                    items: [
+                        {
+                            id: '3',
+                            name: 'test1-serverless-log-retention-demo',
+                        },
+                        {
+                            id: '1',
+                            name: 'dev-serverless-log-retention-demo',
+                        }
+                    ],
+                    position: undefined
+                });
+            }
+        });
+
+        const apigatewayLogRetentionPlugin = new Plugin(serverless, options);
+        const returnedApiId = await apigatewayLogRetentionPlugin.getRestApiId();
+
+        expect(returnedApiId).toEqual('1');
+    })
+
     test('support shouldStartNameWithService in serverless setting', async () => {
         expect.assertions(3);
         serverless.service.provider.apiGateway = { shouldStartNameWithService: true };
