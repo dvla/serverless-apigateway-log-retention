@@ -8,13 +8,19 @@ From your target serverless project, run:
 `npm install serverless-apigateway-log-retention`
 
 Add the plugin to your serverless.yml:
-```
+```yml
 plugins:
   - serverless-apigateway-log-retention
 ```
 
 ## Configuration
-Configuration happens 'globally' via custom.apigatewayLogRetention
+Configuration happens 'globally' via `custom.apigatewayLogRetention`. The plugin uses AWS profile configured under `provider.profile` or defaults to AWS credentials set in the environemnt. By default the plugin assumes the API name format to be `[STAGE]-[SERVICE_NAME]`. If your API name format is `[SERVICE_NAME]-[STAGE]`, set `provider.apiGateway.shouldStartNameWithService` to true like so:
+```yml
+provider:
+  name: aws
+  apigateway:
+    shouldStartNameWithService: true
+```
 
 PLEASE NOTE THAT THE PLUGIN REQUIRES THE FOLLOWING AWS PERMISSIONS:
 
@@ -53,7 +59,6 @@ custom:
       enabled: true
       days: 'never expire'
 ```
-\
 `serverless.yml` - Enabled for access logging and execution logging:
 ```yml
 service: sample
