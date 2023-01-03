@@ -78,3 +78,5 @@ custom:
       enabled: true
       days: 7
 ```
+
+**Note:** To use this module under proxy environment you need to export HTTP_PROXY variable with the particular address 

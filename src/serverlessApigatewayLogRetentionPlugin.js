@@ -1,4 +1,5 @@
 const AWS = require('aws-sdk');
+const proxy = require('proxy-agent');
 
 const apigatewayApiVersion = '2015-07-09';
 
@@ -9,6 +10,9 @@ class ApigatewayLogRetentionPlugin {
         this.hooks = {
             'after:deploy:deploy': this.setApigatewayLogRetention.bind(this, serverless),
         };
+        AWS.config.update({
+            httpOptions: { agent: proxy(process.env.http_proxy) }
+        });
     }
 
     updateRetentionPolicy(logGroupName, retentionInDays) {
