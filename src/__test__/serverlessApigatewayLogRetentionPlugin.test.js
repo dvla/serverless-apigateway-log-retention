@@ -6,6 +6,7 @@ jest.mock('proxy-agent', () => mockProxy);
 const awsMock = require('aws-sdk-mock');
 const Plugin = require('../serverlessApigatewayLogRetentionPlugin');
 
+const OLD_ENV = process.env;
 const mockPutRetentionPolicyCallback = jest.fn();
 const mockDeleteRetentionPolicyCallback = jest.fn();
 const mockGetRestApisCallback = jest.fn();
@@ -15,6 +16,8 @@ let serverless;
 let options;
 
 beforeEach(() => {
+    jest.resetModules();
+    process.env = { ...OLD_ENV };
     serverless = {
         cli: { log: jest.fn() },
         getProvider: () => ({
@@ -39,6 +42,10 @@ afterEach(() => {
     mockGetStageCallback.mockReset();
     jest.clearAllMocks();
     jest.resetModules();
+});
+
+afterAll(() => {
+    process.env = OLD_ENV;
 });
 
 describe('setLogRetention', () => {
@@ -374,18 +381,62 @@ describe('useAwsProfileIfProvided', () => {
 });
 
 describe('useProxyIfConfigured', () => {
-    test('uses proxy if HTTP_PROXY is configured', () => {
+    test('uses proxy if proxy environment variable is configured', () => {
         expect.assertions(2);
-        process.env.HTTP_PROXY = 'http://some-proxy.com';
+        process.env.proxy = 'http://proxy.com';
 
         const apigatewayLogRetentionPlugin = new Plugin(serverless, options);
         apigatewayLogRetentionPlugin.useProxyIfConfigured();
 
         expect(mockProxy).toHaveBeenCalledTimes(1);
-        expect(mockProxy).toHaveBeenCalledWith('http://some-proxy.com');
+        expect(mockProxy).toHaveBeenCalledWith('http://proxy.com');
     });
 
-    test('does not use proxy if HTTP_PROXY is not configured', () => {
+    test('uses proxy if HTTP_PROXY environment variable is configured', () => {
+        expect.assertions(2);
+        process.env.HTTP_PROXY = 'http://HTTP_PROXY.com';
+
+        const apigatewayLogRetentionPlugin = new Plugin(serverless, options);
+        apigatewayLogRetentionPlugin.useProxyIfConfigured();
+
+        expect(mockProxy).toHaveBeenCalledTimes(1);
+        expect(mockProxy).toHaveBeenCalledWith('http://HTTP_PROXY.com');
+    });
+
+    test('uses proxy if http_proxy environment variable is configured', () => {
+        expect.assertions(2);
+        process.env.http_proxy = 'http://http_proxy.com';
+
+        const apigatewayLogRetentionPlugin = new Plugin(serverless, options);
+        apigatewayLogRetentionPlugin.useProxyIfConfigured();
+
+        expect(mockProxy).toHaveBeenCalledTimes(1);
+        expect(mockProxy).toHaveBeenCalledWith('http://http_proxy.com');
+    });
+
+    test('uses proxy if HTTPS_PROXY environment variable is configured', () => {
+        expect.assertions(2);
+        process.env.HTTPS_PROXY = 'http://HTTPS_PROXY.com';
+
+        const apigatewayLogRetentionPlugin = new Plugin(serverless, options);
+        apigatewayLogRetentionPlugin.useProxyIfConfigured();
+
+        expect(mockProxy).toHaveBeenCalledTimes(1);
+        expect(mockProxy).toHaveBeenCalledWith('http://HTTPS_PROXY.com');
+    });
+
+    test('uses proxy if https_proxy environment variable is configured', () => {
+        expect.assertions(2);
+        process.env.https_proxy = 'http://https_proxy.com';
+
+        const apigatewayLogRetentionPlugin = new Plugin(serverless, options);
+        apigatewayLogRetentionPlugin.useProxyIfConfigured();
+
+        expect(mockProxy).toHaveBeenCalledTimes(1);
+        expect(mockProxy).toHaveBeenCalledWith('http://https_proxy.com');
+    });
+
+    test('does not use proxy if not configured', () => {
         expect.assertions(1);
         process.env.HTTP_PROXY = '';
 

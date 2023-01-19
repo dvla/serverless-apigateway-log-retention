@@ -1,5 +1,5 @@
 const AWS = require('aws-sdk');
-const proxy = require('proxy-agent');
+const proxyAgent = require('proxy-agent');
 
 const apigatewayApiVersion = '2015-07-09';
 
@@ -71,10 +71,16 @@ class ApigatewayLogRetentionPlugin {
     }
 
     useProxyIfConfigured() {
-        const HTTP_PROXY = process.env.HTTP_PROXY;
-        if (HTTP_PROXY) {
+        const proxy =
+            process.env.proxy ||
+            process.env.HTTP_PROXY ||
+            process.env.http_proxy ||
+            process.env.HTTPS_PROXY ||
+            process.env.https_proxy;
+
+        if (proxy) {
             AWS.config.update({
-                httpOptions: { agent: proxy(HTTP_PROXY) }
+                httpOptions: { agent: proxyAgent(proxy) }
             });
         }
     }
