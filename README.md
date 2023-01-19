@@ -14,7 +14,13 @@ plugins:
 ```
 
 ## Configuration
-Configuration happens 'globally' via `custom.apigatewayLogRetention`. The plugin uses AWS profile configured under `provider.profile` or defaults to AWS credentials set in the environemnt. By default the plugin assumes the API name format to be `[STAGE]-[SERVICE_NAME]`. If your API name format is `[SERVICE_NAME]-[STAGE]`, set `provider.apiGateway.shouldStartNameWithService` to true like so:
+Configuration happens 'globally' via `custom.apigatewayLogRetention`.
+
+The plugin uses AWS profile configured under `provider.profile` or defaults to AWS credentials set in the environment.
+
+If you can't directly connect to the internet, the plugin supports proxy which you can set via the `HTTP_PROXY` environment variable. 
+
+By default the plugin assumes the API name format to be `[STAGE]-[SERVICE_NAME]`. If your API name format is `[SERVICE_NAME]-[STAGE]`, set `provider.apiGateway.shouldStartNameWithService` to true like so:
 ```yml
 provider:
   name: aws

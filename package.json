@@ -26,7 +26,8 @@
         "test": "jest"
     },
     "dependencies": {
-        "aws-sdk": "^2.933.0"
+        "aws-sdk": "^2.933.0",
+        "proxy-agent": "^5.0.0"
     },
     "devDependencies": {
         "aws-sdk-mock": "^5.2.1",

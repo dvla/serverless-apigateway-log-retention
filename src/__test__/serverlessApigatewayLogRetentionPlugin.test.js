@@ -1,4 +1,8 @@
 /* eslint-disable max-len */
+const mockProxy = jest.fn();
+
+jest.mock('proxy-agent', () => mockProxy);
+
 const awsMock = require('aws-sdk-mock');
 const Plugin = require('../serverlessApigatewayLogRetentionPlugin');
 
@@ -336,7 +340,7 @@ describe('getAccessLogGroupName', () => {
 });
 
 describe('useAwsProfileIfProvided', () => {
-    test('uses AWS profile instead of default if provided', async () => {
+    test('uses AWS profile instead of default if provided', () => {
         expect.assertions(2);
         const mockSharedIniFileCredentials = jest.fn();
 
@@ -346,7 +350,7 @@ describe('useAwsProfileIfProvided', () => {
         serverless.service.provider.profile = 'test_profile';
 
         const apigatewayLogRetentionPlugin = new Plugin(serverless, options);
-        await apigatewayLogRetentionPlugin.useAwsProfileIfprovided(mockAwsSdk);
+        apigatewayLogRetentionPlugin.useAwsProfileIfprovided(mockAwsSdk);
 
         expect(mockSharedIniFileCredentials).toHaveBeenCalledTimes(1);
         expect(mockSharedIniFileCredentials).toHaveBeenCalledWith({
@@ -354,7 +358,7 @@ describe('useAwsProfileIfProvided', () => {
         });
     });
 
-    test('uses default AWS profile if profile was not provided', async () => {
+    test('uses default AWS profile if profile was not provided', () => {
         expect.assertions(1);
         const mockSharedIniFileCredentials = jest.fn();
 
@@ -363,12 +367,34 @@ describe('useAwsProfileIfProvided', () => {
         }
 
         const apigatewayLogRetentionPlugin = new Plugin(serverless, options);
-        await apigatewayLogRetentionPlugin.useAwsProfileIfprovided(mockAwsSdk);
+        apigatewayLogRetentionPlugin.useAwsProfileIfprovided(mockAwsSdk);
 
         expect(mockSharedIniFileCredentials).toHaveBeenCalledTimes(0);
     });
 });
 
+describe('useProxyIfConfigured', () => {
+    test('uses proxy if HTTP_PROXY is configured', () => {
+        expect.assertions(2);
+        process.env.HTTP_PROXY = 'http://some-proxy.com';
+
+        const apigatewayLogRetentionPlugin = new Plugin(serverless, options);
+        apigatewayLogRetentionPlugin.useProxyIfConfigured();
+
+        expect(mockProxy).toHaveBeenCalledTimes(1);
+        expect(mockProxy).toHaveBeenCalledWith('http://some-proxy.com');
+    });
+
+    test('does not use proxy if HTTP_PROXY is not configured', () => {
+        expect.assertions(1);
+        process.env.HTTP_PROXY = '';
+
+        const apigatewayLogRetentionPlugin = new Plugin(serverless, options);
+        apigatewayLogRetentionPlugin.useProxyIfConfigured();
+
+        expect(mockProxy).toHaveBeenCalledTimes(0);
+    });
+});
 
 describe('setApigatewayLogRetention', () => {
     test('returns early if access logging and execution logging is disabled', async () => {
