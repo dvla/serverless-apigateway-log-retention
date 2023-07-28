@@ -1,6 +1,6 @@
 {
     "name": "serverless-apigateway-log-retention",
-    "version": "0.0.7",
+    "version": "1.0.0",
     "description": "A plugin for the Serverless framework which configures ApiGateway access adn execution log retention.",
     "author": "Deepak Thankachan, DVLA",
     "license": "MIT",
