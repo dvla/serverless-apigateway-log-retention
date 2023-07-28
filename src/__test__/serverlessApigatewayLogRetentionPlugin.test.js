@@ -1,7 +1,7 @@
 /* eslint-disable max-len */
-const mockProxy = jest.fn();
+const { ProxyAgent } = require('proxy-agent');
 
-jest.mock('proxy-agent', () => mockProxy);
+jest.mock('proxy-agent');
 
 const awsMock = require('aws-sdk-mock');
 const Plugin = require('../serverlessApigatewayLogRetentionPlugin');
@@ -381,59 +381,54 @@ describe('useAwsProfileIfProvided', () => {
 });
 
 describe('useProxyIfConfigured', () => {
-    test('uses proxy if proxy environment variable is configured', () => {
-        expect.assertions(2);
-        process.env.proxy = 'http://proxy.com';
-
-        const apigatewayLogRetentionPlugin = new Plugin(serverless, options);
-        apigatewayLogRetentionPlugin.useProxyIfConfigured();
-
-        expect(mockProxy).toHaveBeenCalledTimes(1);
-        expect(mockProxy).toHaveBeenCalledWith('http://proxy.com');
-    });
-
     test('uses proxy if HTTP_PROXY environment variable is configured', () => {
-        expect.assertions(2);
+        expect.assertions(1);
         process.env.HTTP_PROXY = 'http://HTTP_PROXY.com';
 
         const apigatewayLogRetentionPlugin = new Plugin(serverless, options);
         apigatewayLogRetentionPlugin.useProxyIfConfigured();
 
-        expect(mockProxy).toHaveBeenCalledTimes(1);
-        expect(mockProxy).toHaveBeenCalledWith('http://HTTP_PROXY.com');
-    });
-
-    test('uses proxy if http_proxy environment variable is configured', () => {
-        expect.assertions(2);
-        process.env.http_proxy = 'http://http_proxy.com';
-
-        const apigatewayLogRetentionPlugin = new Plugin(serverless, options);
-        apigatewayLogRetentionPlugin.useProxyIfConfigured();
-
-        expect(mockProxy).toHaveBeenCalledTimes(1);
-        expect(mockProxy).toHaveBeenCalledWith('http://http_proxy.com');
+        expect(ProxyAgent).toHaveBeenCalledTimes(1);
     });
 
     test('uses proxy if HTTPS_PROXY environment variable is configured', () => {
-        expect.assertions(2);
+        expect.assertions(1);
         process.env.HTTPS_PROXY = 'http://HTTPS_PROXY.com';
 
         const apigatewayLogRetentionPlugin = new Plugin(serverless, options);
         apigatewayLogRetentionPlugin.useProxyIfConfigured();
 
-        expect(mockProxy).toHaveBeenCalledTimes(1);
-        expect(mockProxy).toHaveBeenCalledWith('http://HTTPS_PROXY.com');
+        expect(ProxyAgent).toHaveBeenCalledTimes(1);
     });
 
-    test('uses proxy if https_proxy environment variable is configured', () => {
-        expect.assertions(2);
-        process.env.https_proxy = 'http://https_proxy.com';
+    test('uses proxy if FTP_PROXY environment variable is configured', () => {
+        expect.assertions(1);
+        process.env.FTP_PROXY = 'ftp://user@host/foo/bar.txt';
 
         const apigatewayLogRetentionPlugin = new Plugin(serverless, options);
         apigatewayLogRetentionPlugin.useProxyIfConfigured();
 
-        expect(mockProxy).toHaveBeenCalledTimes(1);
-        expect(mockProxy).toHaveBeenCalledWith('http://https_proxy.com');
+        expect(ProxyAgent).toHaveBeenCalledTimes(1);
+    });
+
+    test('uses proxy if WSS_PROXY environment variable is configured', () => {
+        expect.assertions(1);
+        process.env.WSS_PROXY = 'wss://www.example.com/';
+
+        const apigatewayLogRetentionPlugin = new Plugin(serverless, options);
+        apigatewayLogRetentionPlugin.useProxyIfConfigured();
+
+        expect(ProxyAgent).toHaveBeenCalledTimes(1);
+    });
+
+    test('uses proxy if WS_PROXY environment variable is configured', () => {
+        expect.assertions(1);
+        process.env.WS_PROXY = 'ws://www.example.com/';
+
+        const apigatewayLogRetentionPlugin = new Plugin(serverless, options);
+        apigatewayLogRetentionPlugin.useProxyIfConfigured();
+
+        expect(ProxyAgent).toHaveBeenCalledTimes(1);
     });
 
     test('does not use proxy if not configured', () => {
@@ -443,7 +438,7 @@ describe('useProxyIfConfigured', () => {
         const apigatewayLogRetentionPlugin = new Plugin(serverless, options);
         apigatewayLogRetentionPlugin.useProxyIfConfigured();
 
-        expect(mockProxy).toHaveBeenCalledTimes(0);
+        expect(ProxyAgent).toHaveBeenCalledTimes(0);
     });
 });
 

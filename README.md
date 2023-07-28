@@ -20,11 +20,11 @@ The plugin uses AWS profile configured under `provider.profile` or defaults to A
 
 If you can't directly connect to the internet, the plugin supports proxy which you can set via any of the following environment variables:
 ```
-- proxy
 - HTTP_PROXY
-- http_proxy
 - HTTPS_PROXY
-- https_proxy
+- FTP_PROXY
+- WSS_PROXY
+- WS_PROXY
 ``` 
 
 By default the plugin assumes the API name format to be `[STAGE]-[SERVICE_NAME]`. If your API name format is `[SERVICE_NAME]-[STAGE]`, set `provider.apiGateway.shouldStartNameWithService` to true like so:
