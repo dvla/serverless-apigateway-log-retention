@@ -33,10 +33,10 @@ class ApigatewayLogRetentionPlugin {
             apis.push(...(items || []));
             marker = position;
         } while (marker);
-
-        const apiName = this.serverless.service.provider.apiGateway?.shouldStartNameWithService
+        const customApiName = this.serverless.service.provider.apiName;
+        const apiName = customApiName || (this.serverless.service.provider.apiGateway?.shouldStartNameWithService
             ? `${this.serverless.service.getServiceName()}-${this.options.stage}`
-            : `${this.options.stage}-${this.serverless.service.getServiceName()}`;
+            : `${this.options.stage}-${this.serverless.service.getServiceName()}`);
         const match = apis.find((api) => api.name === apiName);
         if (!match) {
             throw new Error(`Api ${apiName} does not exist.`);

@@ -227,6 +227,37 @@ describe('getRestApiId', () => {
         expect(returnedApiId).toEqual('1');
     });
 
+    test('support predefined apiName in serverless setting', async () => {
+        expect.assertions(3);
+        serverless.service.provider.apiName = 'v1x01-test-api-dev';
+        awsMock.mock('APIGateway', 'getRestApis', (params, callback) => {
+            mockGetRestApisCallback(params);
+            callback('', {
+                items: [
+                    {
+                        id: '1',
+                        name: 'v1x01-test-api-dev',
+                    },
+                    {
+                        id: '2',
+                        name: 'serverless-log-retention-demo-test1',
+                    },
+                ],
+            });
+        });
+
+        const expectedGetRestApisCallback = {
+            limit: 500,
+        };
+
+        const apigatewayLogRetentionPlugin = new Plugin(serverless, options);
+        const returnedApiId = await apigatewayLogRetentionPlugin.getRestApiId();
+
+        expect(mockGetRestApisCallback).toHaveBeenCalledTimes(1);
+        expect(mockGetRestApisCallback).toHaveBeenCalledWith(expectedGetRestApisCallback);
+        expect(returnedApiId).toEqual('1');
+    });
+
     test('throws error if there is no API name matching the deployed stack name', async () => {
         expect.assertions(2);
         awsMock.mock('APIGateway', 'getRestApis', (params, callback) => {
