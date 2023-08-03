@@ -27,10 +27,11 @@ If you can't directly connect to the internet, the plugin supports proxy which y
 - WS_PROXY
 ``` 
 
-By default the plugin assumes the API name format to be `[STAGE]-[SERVICE_NAME]`. If your API name format is `[SERVICE_NAME]-[STAGE]`, set `provider.apiGateway.shouldStartNameWithService` to true like so:
+By default the plugin assumes the API name format to be `[STAGE]-[SERVICE_NAME]`. If your API name format is `[SERVICE_NAME]-[STAGE]`, set `provider.apiGateway.shouldStartNameWithService` to true. If you want to set custom api name then you can set it by `provider.apiName` like so:
 ```yml
 provider:
   name: aws
+  apiName: ''
   apigateway:
     shouldStartNameWithService: true
 ```

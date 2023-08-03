@@ -51,7 +51,7 @@ class ApigatewayLogRetentionPlugin {
         });
         const params = {
             restApiId,
-            stageName: this.options.stage,
+            stageName: this.serverless.service.provider.apiGateway?.stage || this.options.stage,
         };
         const stageConfig = await apiGateway.getStage(params).promise();
 
