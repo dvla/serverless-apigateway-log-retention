@@ -128,7 +128,8 @@ class ApigatewayLogRetentionPlugin {
 
         if (executionLogging.enabled) {
             try {
-                const executionLogGroupName = `API-Gateway-Execution-Logs_${restApiId}/${this.options.stage}`;
+                const stage = this.serverless.service.provider.apiGateway?.stage || this.options.stage;
+                const executionLogGroupName = `API-Gateway-Execution-Logs_${restApiId}/${stage}`;
                 await this.updateRetentionPolicy(executionLogGroupName, executionLogging.days);
                 this.serverless.cli.log(
                     `serverless-apigateway-log-retention - Successfully set ApiGateway execution log (${executionLogGroupName}) retention to ${executionLogging.days} days.`
