@@ -35,6 +35,13 @@ provider:
     shouldStartNameWithService: true
 ```
 
+If you want to use a custom API name, set it via `provider.apiName` like so:
+```yml
+provider:
+  name: aws
+  apiName: 'my-custom-api-name'
+```
+
 PLEASE NOTE THAT THE PLUGIN REQUIRES THE FOLLOWING AWS PERMISSIONS:
 
 **CloudWatch Logs**

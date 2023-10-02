@@ -1,7 +1,8 @@
-const AWS = require('aws-sdk');
+const { CloudWatchLogsClient, PutRetentionPolicyCommand, DeleteRetentionPolicyCommand } = require("@aws-sdk/client-cloudwatch-logs");
+const { APIGatewayClient, GetStageCommand, GetRestApisCommand } = require("@aws-sdk/client-api-gateway");
+const { fromIni } = require('@aws-sdk/credential-provider-ini');
+const { NodeHttpHandler } = require('@smithy/node-http-handler');
 const { ProxyAgent } = require('proxy-agent');
-
-const apigatewayApiVersion = '2015-07-09';
 
 class ApigatewayLogRetentionPlugin {
     constructor(serverless, options) {
@@ -12,31 +13,32 @@ class ApigatewayLogRetentionPlugin {
         };
     }
 
-    updateRetentionPolicy(logGroupName, retentionInDays) {
-        const cloudWatchLogs = new AWS.CloudWatchLogs({ region: this.serverless.getProvider('aws').getRegion() });
-        if (`${retentionInDays}`.toLowerCase() === 'never expire') {
-            return cloudWatchLogs.deleteRetentionPolicy({ logGroupName }).promise();
-        }
-        return cloudWatchLogs.putRetentionPolicy({ logGroupName, retentionInDays }).promise();
+    getRequestHandlerWithProxy(){
+        const proxyAgent = new ProxyAgent();
+        return new NodeHttpHandler({ httpAgent: proxyAgent, httpsAgent: proxyAgent })
     }
 
-    async getRestApiId() {
-        const apiGateway = new AWS.APIGateway({
-            apiVersion: apigatewayApiVersion,
-            region: this.serverless.getProvider('aws').getRegion(),
-        });
+    updateRetentionPolicy(logGroupName, retentionInDays, cloudWatchLogs) {
+        if (`${retentionInDays}`.toLowerCase() === 'never expire') {
+            return cloudWatchLogs.send(new DeleteRetentionPolicyCommand({ logGroupName }))
+        }
+        return cloudWatchLogs.send(new PutRetentionPolicyCommand({ logGroupName, retentionInDays }))
+    }
 
+    async getRestApiId(apiGateway) {
         const apis = [];
         let marker;
         do {
-            const { items, position } = await apiGateway.getRestApis({ position: marker, limit: 500 }).promise();
+            const { items, position } = await apiGateway.send(new GetRestApisCommand({ position: marker, limit: 500 }));
             apis.push(...(items || []));
             marker = position;
         } while (marker);
 
-        const apiName = this.serverless.service.provider.apiGateway?.shouldStartNameWithService
+        const customApiName = this.serverless.service.provider.apiName;
+        const apiName = customApiName || (this.serverless.service.provider.apiGateway?.shouldStartNameWithService
             ? `${this.serverless.service.getServiceName()}-${this.options.stage}`
-            : `${this.options.stage}-${this.serverless.service.getServiceName()}`;
+            : `${this.options.stage}-${this.serverless.service.getServiceName()}`);
+
         const match = apis.find((api) => api.name === apiName);
         if (!match) {
             throw new Error(`Api ${apiName} does not exist.`);
@@ -44,16 +46,12 @@ class ApigatewayLogRetentionPlugin {
         return match.id;
     }
 
-    async getAccessLogGroupName(restApiId) {
-        const apiGateway = new AWS.APIGateway({
-            apiVersion: apigatewayApiVersion,
-            region: this.serverless.getProvider('aws').getRegion(),
-        });
+    async getAccessLogGroupName(restApiId, apiGateway) {
         const params = {
             restApiId,
             stageName: this.options.stage,
         };
-        const stageConfig = await apiGateway.getStage(params).promise();
+        const stageConfig = await apiGateway.send(new GetStageCommand(params));
 
         if (stageConfig.accessLogSettings && stageConfig.accessLogSettings.destinationArn) {
             return stageConfig.accessLogSettings.destinationArn.split('log-group:')[1];
@@ -61,28 +59,6 @@ class ApigatewayLogRetentionPlugin {
         throw new Error(
             `Access log destination ARN not set! Please check access logging is enabled and destination ARN is configured in ApiGateway > stage > Logs/Tracing.`
         );
-    }
-
-    useAwsProfileIfprovided(awsSDK) {
-        const profile = this.serverless.service.provider?.profile;
-        if (profile) {
-            AWS.config.credentials = new awsSDK.SharedIniFileCredentials({ profile });
-        }
-    }
-
-    useProxyIfConfigured() {
-        const proxy =
-            process.env.HTTP_PROXY ||
-            process.env.HTTPS_PROXY ||
-            process.env.FTP_PROXY ||
-            process.env.WSS_PROXY ||
-            process.env.WS_PROXY;
-
-        if (proxy) {
-            AWS.config.update({
-                httpOptions: { agent: new ProxyAgent() }
-            });
-        }
     }
 
     async setApigatewayLogRetention() {
@@ -94,18 +70,29 @@ class ApigatewayLogRetentionPlugin {
                         executionLogging = { enabled: false },
                     } = {},
                 } = {},
+                provider: {
+                    profile
+                } = {}
             } = {},
         } = this.serverless;
+
         if (!accessLogging.enabled && !executionLogging.enabled) {
             return;
         }
 
-        this.useAwsProfileIfprovided(AWS);
-        this.useProxyIfConfigured();
+        const proxy = process.env.HTTP_PROXY || process.env.HTTPS_PROXY || process.env.FTP_PROXY || process.env.WSS_PROXY || process.env.WS_PROXY;
+        const awsClientConfig = {
+            region: this.serverless.getProvider('aws').getRegion(),
+            ...(profile && { credentials: fromIni({ profile }) }),
+            ...(proxy && { requestHandler: this.getRequestHandlerWithProxy() })
+        }
+
+        const cloudWatchLogs = new CloudWatchLogsClient(awsClientConfig);
+        const apiGateway = new APIGatewayClient(awsClientConfig);
 
         let restApiId;
         try {
-            restApiId = await this.getRestApiId();
+            restApiId = await this.getRestApiId(apiGateway);
         } catch (e) {
             const errorMessage = `serverless-apigateway-log-retention - ERROR: Failed to retrieve rest api id. ${e.message}`;
             this.serverless.cli.log(errorMessage);
@@ -114,8 +101,8 @@ class ApigatewayLogRetentionPlugin {
 
         if (accessLogging.enabled) {
             try {
-                const accessLogGroupName = await this.getAccessLogGroupName(restApiId);
-                await this.updateRetentionPolicy(accessLogGroupName, accessLogging.days);
+                const accessLogGroupName = await this.getAccessLogGroupName(restApiId, apiGateway);
+                await this.updateRetentionPolicy(accessLogGroupName, accessLogging.days, cloudWatchLogs);
                 this.serverless.cli.log(
                     `serverless-apigateway-log-retention - Successfully set ApiGateway access log (${accessLogGroupName}) retention to ${accessLogging.days} days.`
                 );
@@ -129,7 +116,7 @@ class ApigatewayLogRetentionPlugin {
         if (executionLogging.enabled) {
             try {
                 const executionLogGroupName = `API-Gateway-Execution-Logs_${restApiId}/${this.options.stage}`;
-                await this.updateRetentionPolicy(executionLogGroupName, executionLogging.days);
+                await this.updateRetentionPolicy(executionLogGroupName, executionLogging.days, cloudWatchLogs);
                 this.serverless.cli.log(
                     `serverless-apigateway-log-retention - Successfully set ApiGateway execution log (${executionLogGroupName}) retention to ${executionLogging.days} days.`
                 );
