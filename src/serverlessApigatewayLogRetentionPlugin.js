@@ -13,7 +13,7 @@ class ApigatewayLogRetentionPlugin {
         };
     }
 
-    getRequestHandlerWithProxy = () => {
+    getRequestHandlerWithProxy(){
         const proxyAgent = new ProxyAgent();
         return new NodeHttpHandler({ httpAgent: proxyAgent, httpsAgent: proxyAgent })
     }
