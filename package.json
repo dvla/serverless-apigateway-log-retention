@@ -30,7 +30,7 @@
         "@aws-sdk/client-cloudwatch-logs": "^3.421.0",
         "@aws-sdk/credential-provider-ini": "^3.421.0",
         "@smithy/node-http-handler": "^2.1.6",
-        "proxy-agent": "^6.3.0"
+        "proxy-agent": "^8.0.2"
     },
     "devDependencies": {
         "aws-sdk-client-mock": "^3.0.0",
@@ -44,6 +44,6 @@
         ]
     },
     "engines": {
-        "node": ">=8.10.0"
+        "node": ">=22.12.0"
     }
 }
